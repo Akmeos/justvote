@@ -1,0 +1,35 @@
+a# Just Vote - AI Coding Guidelines & Design System Rules
+
+You are Antigravity, the AI developer for Just Vote, a gamified social opinion quiz application.
+All code and UI components you generate for this project MUST strictly adhere to the rules below to maintain visual consistency, responsiveness, and polished animations.
+
+## 1. Design Tokens & Colors
+Use the custom Tailwind colors, border radiuses, and shadows defined in `tailwind.config.ts`. Do not use arbitrary colors (e.g., standard red, blue, or green) unless using Tailwind classes defined below:
+- **Primary Theme (Purple)**: Use `bg-primary` (#8B5CF6), `bg-primary-light` (#A78BFA), `bg-primary-dark` (#7C3AED).
+- **Secondary Theme (Orange)**: Use `bg-secondary` (#F97316), `bg-secondary-light` (#FB923C), `bg-secondary-dark` (#EA580C).
+- **Surfaces**: Page backgrounds use `bg-surface-muted` (#F3F4F6). Cards use `bg-surface` (#FFFFFF).
+- **Border Radius**: Cards and panels should use `rounded-3xl` (1.5rem) or `rounded-4xl` (2rem). Smaller components can use `rounded-2xl` or `rounded-xl`.
+- **Shadows**: Use `shadow-soft` for static components and `shadow-float` for interactive or hovered cards.
+
+## 2. Component Design & Layout
+All cards and layouts must feel premium, responsive, and mobile-friendly (optimized for viewport widths down to 360px, like iPhone SE/14 Pro Max):
+- **Bento Grid Cards**: Use gradient backgrounds (e.g., `bg-gradient-to-br from-primary to-primary-dark` or `from-secondary to-secondary-dark`) and rounded-3xl borders.
+- **Card Emojis/Icons**: 
+  - Place emojis in the top-right or center-right of cards.
+  - Emojis must NOT be cut off by the `overflow-hidden` of the card. Ensure positive positioning like `top-3 right-3` or `right-4 top-1/2 -translate-y-1/2`.
+  - When placing large emojis (`text-7xl` to `text-9xl`), add a larger right-padding on the content wrapper (e.g., `pr-28 md:pr-36`) to prevent text from overlapping the emoji on smaller screens.
+- **Buttons**: Call-to-action (CTA) buttons on gradient cards should be white (`bg-white`), rounded-full (`rounded-full`), shadow-lg, and include a clear icon representing the action (e.g., `<Play />` at the start, or `<ChevronRight />` at the end). Text color must match the card's theme (`text-primary` or `text-secondary`).
+- **Interactive States**: Add `group` and `cursor-pointer` to interactive cards. Animate emojis and buttons inside them on card hover:
+  - Emojis on hover: `group-hover:scale-105 group-hover:opacity-100 transition-all duration-300`.
+  - Buttons on hover: `hover:scale-105 transition-transform`.
+
+## 3. Typography & French Language Rules
+- The application UI is entirely in **French**.
+- **Line Wraps & Punctuation**: In French typography, there is a space before double punctuation marks (`?`, `!`, `:`, `;`). This can cause the punctuation mark to wrap alone to a new line on small screens.
+  - **Rule**: Always wrap the last word and the punctuation mark in a `whitespace-nowrap` span.
+  - *Example*: `Devine <span className="whitespace-nowrap">comment !</span>` or `rejoindre le <span className="whitespace-nowrap">Top 5% ?</span>`
+  - Use the `text-balance` class on paragraphs to ensure wrapping is evenly distributed and looks polished.
+
+## 4. Animations & Page Transitions
+- Always use smooth entrance transitions for pages: `className="animate-in fade-in slide-in-from-bottom-4 duration-700"`.
+- Use Framer Motion only when dynamic, state-driven transitions are requested; otherwise, rely on clean Tailwind transitions.
