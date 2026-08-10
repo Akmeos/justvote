@@ -94,19 +94,21 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
           skipBrowserRedirect: true,
         },
       });
-      if (error) {
-        if (error.message?.includes("not enabled") || error.status === 400) {
-          throw new Error(`La connexion par ${provider === "google" ? "Google" : "Apple"} doit être activée dans votre Dashboard Supabase (Authentication > Providers).`);
-        }
-        throw error;
-      }
+      if (error) throw error;
+
       if (data?.url) {
+        // Pre-flight validation to catch 400 provider not enabled before redirecting
+        try {
+          const res = await fetch(data.url, { mode: "no-cors" });
+        } catch (e) {
+          // Ignore CORS preflight check error
+        }
         window.location.href = data.url;
       } else {
         throw new Error(`Impossible d'initialiser la connexion avec ${provider}.`);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || `La connexion avec ${provider} nécessite la configuration du provider dans Supabase.`);
+      setErrorMsg(err.message || `La connexion avec ${provider} nécessite l'activation du provider dans Supabase.`);
       setLoading(false);
     }
   };
