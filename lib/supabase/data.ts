@@ -171,20 +171,6 @@ export async function ensureUserProfile(user: User): Promise<UserProfile> {
   const googleName = user.user_metadata?.full_name || user.user_metadata?.name || user.user_metadata?.username;
 
   if (existingProfile) {
-    if ((googleAvatar && (!existingProfile.avatar_url || existingProfile.avatar_url.includes('PokeAPI'))) || (googleName && existingProfile.username.startsWith('User_'))) {
-      const updates: Partial<UserProfile> = {};
-      if (googleAvatar) updates.avatar_url = googleAvatar;
-      if (googleName) updates.username = googleName;
-
-      const { data: updated } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id)
-        .select()
-        .single();
-
-      if (updated) return updated as UserProfile;
-    }
     return existingProfile as UserProfile;
   }
 
@@ -224,8 +210,7 @@ export async function updateUserProfile(userId: string, updates: Partial<UserPro
   const supabase = createClient();
   const { data, error } = await supabase
     .from('profiles')
-    .update(updates)
-    .eq('id', userId)
+    .upsert({ id: userId, ...updates })
     .select()
     .single();
 

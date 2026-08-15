@@ -42,23 +42,20 @@ export function InitialProfileSetupModal() {
 
     setLoading(true);
     try {
-      // 1. Update Supabase Profile
+      // 1. Update Local Storage & close modal immediately for instant feedback
+      localStorage.setItem("user-avatar-url", selectedAvatar.url);
+      localStorage.setItem(`setup-completed-${user.id}`, "true");
+      setIsOpen(false);
+      window.dispatchEvent(new CustomEvent("user-avatar-changed", { detail: selectedAvatar.url }));
+
+      // 2. Update Supabase Profile
       await updateUserProfile(user.id, {
         username: username.trim(),
         avatar_url: selectedAvatar.url,
       });
 
-      // 2. Update Local Storage
-      localStorage.setItem("user-avatar-url", selectedAvatar.url);
-      localStorage.setItem(`setup-completed-${user.id}`, "true");
-
-      // 3. Dispatch event for header topbar
-      window.dispatchEvent(new CustomEvent("user-avatar-changed", { detail: selectedAvatar.url }));
-
-      // 4. Refetch profile in AuthProvider
+      // 3. Refetch profile in AuthProvider
       await refetchProfile();
-
-      setIsOpen(false);
     } catch (err) {
       console.error("Error saving initial profile setup:", err);
     } finally {
