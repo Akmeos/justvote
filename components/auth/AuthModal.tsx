@@ -87,28 +87,15 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     setErrorMsg(null);
     const supabase = createClient();
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${window.location.origin}/dashboard`,
-          skipBrowserRedirect: true,
         },
       });
       if (error) throw error;
-
-      if (data?.url) {
-        // Pre-flight validation to catch 400 provider not enabled before redirecting
-        try {
-          const res = await fetch(data.url, { mode: "no-cors" });
-        } catch (e) {
-          // Ignore CORS preflight check error
-        }
-        window.location.href = data.url;
-      } else {
-        throw new Error(`Impossible d'initialiser la connexion avec ${provider}.`);
-      }
     } catch (err: any) {
-      setErrorMsg(err.message || `La connexion avec ${provider} nécessite l'activation du provider dans Supabase.`);
+      setErrorMsg(err.message || `Erreur lors de la connexion avec ${provider}.`);
       setLoading(false);
     }
   };
