@@ -90,7 +90,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         },
       });
       if (error) throw error;
