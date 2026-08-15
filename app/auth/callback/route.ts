@@ -6,6 +6,13 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
+  const errorParam = searchParams.get("error");
+  const errorDescription = searchParams.get("error_description");
+
+  if (errorParam || errorDescription) {
+    console.error("OAuth callback error received:", errorParam, errorDescription);
+    return NextResponse.redirect(`${origin}${next}?auth_error=${encodeURIComponent(errorDescription || errorParam || "OAuth login error")}`);
+  }
 
   if (code) {
     const cookieStore = cookies();
@@ -26,19 +33,19 @@ export async function GET(request: Request) {
                 response.cookies.set(name, value, options);
               });
             } catch (err) {
-              // Ignore in server components
+              // Ignore
             }
           },
         },
       }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    if (!exchangeError) {
       return response;
     } else {
-      console.error("Auth callback session exchange error:", error);
-      return NextResponse.redirect(`${origin}${next}?auth_error=${encodeURIComponent(error.message)}`);
+      console.error("Auth callback session exchange error:", exchangeError);
+      return NextResponse.redirect(`${origin}${next}?auth_error=${encodeURIComponent(exchangeError.message)}`);
     }
   }
 
