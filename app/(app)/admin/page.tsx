@@ -273,14 +273,25 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { ShieldAlert, Lock, Sparkles, LogIn } from "lucide-react";
 
+import { getAvatars, saveAvatars, AvatarItem } from "@/lib/avatars";
+
 export default function AdminDashboardPage() {
   const { user, profile } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Navigation state (5 main tabs including categories)
-  const [activeTab, setActiveTab] = useState<"dashboard" | "users" | "quizzes" | "stats" | "categories">("dashboard");
+  // Navigation state (6 main tabs including categories & avatars)
+  const [activeTab, setActiveTab] = useState<"dashboard" | "users" | "quizzes" | "stats" | "categories" | "avatars">("dashboard");
   const [categoriesList, setCategoriesList] = useState<any[]>(mockCategories);
   
+  // Avatars Admin State
+  const [adminAvatars, setAdminAvatars] = useState<AvatarItem[]>([]);
+  const [editingAvatar, setEditingAvatar] = useState<AvatarItem | null>(null);
+  const [avatarName, setAvatarName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarReqLevel, setAvatarReqLevel] = useState(1);
+  const [avatarSaveSuccess, setAvatarSaveSuccess] = useState(false);
+  const [isAddingAvatar, setIsAddingAvatar] = useState(false);
+
   // Category Admin State
   const [selectedCategoryToEdit, setSelectedCategoryToEdit] = useState<any>(null);
   const [catTitle, setCatTitle] = useState("");
@@ -291,6 +302,7 @@ export default function AdminDashboardPage() {
   const [categorySaveSuccess, setCategorySaveSuccess] = useState(false);
 
   useEffect(() => {
+    setAdminAvatars(getAvatars());
     async function initAdminData() {
       const dbCategories = await fetchCategories();
       if (dbCategories.length > 0) {
@@ -1245,6 +1257,7 @@ export default function AdminDashboardPage() {
               { id: "users", label: "Utilisateurs", icon: Users },
               { id: "quizzes", label: "Administration des Quiz", icon: Settings },
               { id: "categories", label: "Catégories", icon: Grid },
+              { id: "avatars", label: "Avatars par défaut", icon: ImageIcon },
               { id: "stats", label: "Statistiques", icon: TrendingUp }
             ] as const).map((item) => {
               const IconComponent = item.icon;
@@ -3169,8 +3182,170 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* 6. AVATARS PAR DÉFAUT (AVATARS TAB) */}
+        {activeTab === "avatars" && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-black text-gray-800 tracking-tight">Avatars de profil par défaut 🎨</h2>
+                <p className="text-gray-400 font-semibold text-xs mt-0.5">
+                  Gère la liste des avatars proposés aux nouveaux utilisateurs lors de leur première connexion.
+                </p>
+              </div>
+              <button 
+                onClick={() => {
+                  setEditingAvatar(null);
+                  setAvatarName("");
+                  setAvatarUrl("");
+                  setAvatarReqLevel(1);
+                  setIsAddingAvatar(true);
+                }}
+                className="bg-primary hover:bg-primary-dark text-white font-extrabold px-5 py-3 rounded-2xl text-xs shadow-md shadow-primary/20 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+              >
+                <Plus size={16} /> Ajouter un Avatar
+              </button>
+            </div>
 
+            {/* Avatars Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {adminAvatars.map((avatar) => (
+                <div key={avatar.id} className="bg-white p-4 rounded-[28px] border border-gray-100 shadow-soft flex flex-col items-center justify-between space-y-3 relative group hover:shadow-float transition-all">
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-50 border border-gray-150 p-1 flex items-center justify-center shrink-0">
+                    <img src={avatar.url} alt={avatar.name} className="w-full h-full object-contain" />
+                  </div>
+                  <div className="text-center">
+                    <h4 className="font-extrabold text-sm text-gray-800">{avatar.name}</h4>
+                    <span className="text-[10px] font-bold text-gray-400 block mt-0.5">Niveau déblocage : {avatar.requiredLevel}</span>
+                  </div>
+                  <div className="flex items-center gap-2 w-full pt-2 border-t border-gray-100">
+                    <button
+                      onClick={() => {
+                        setEditingAvatar(avatar);
+                        setAvatarName(avatar.name);
+                        setAvatarUrl(avatar.url);
+                        setAvatarReqLevel(avatar.requiredLevel);
+                        setIsAddingAvatar(true);
+                      }}
+                      className="flex-1 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 font-extrabold text-[10px] rounded-xl border border-gray-200 transition-all"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      onClick={() => {
+                        const updated = adminAvatars.filter(a => a.id !== avatar.id);
+                        setAdminAvatars(updated);
+                        saveAvatars(updated);
+                      }}
+                      className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
 
+            {/* Add/Edit Avatar Modal */}
+            {isAddingAvatar && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-[32px] border border-gray-100 shadow-float max-w-md w-full p-6 space-y-6 relative animate-in fade-in zoom-in-95">
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-black text-gray-800">
+                      {editingAvatar ? "Modifier l'Avatar" : "Ajouter un nouvel Avatar"}
+                    </h3>
+                    <p className="text-xs text-gray-400 font-semibold">
+                      Renseigne l&apos;URL de l&apos;illustration et le niveau minimum requis.
+                    </p>
+                  </div>
+
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!avatarName.trim() || !avatarUrl.trim()) return;
+
+                    let updated: AvatarItem[];
+                    if (editingAvatar) {
+                      updated = adminAvatars.map(a => a.id === editingAvatar.id ? { ...a, name: avatarName.trim(), url: avatarUrl.trim(), requiredLevel: avatarReqLevel } : a);
+                    } else {
+                      const newAv: AvatarItem = {
+                        id: `avatar-${Date.now()}`,
+                        name: avatarName.trim(),
+                        url: avatarUrl.trim(),
+                        requiredLevel: avatarReqLevel,
+                        bgClass: "bg-purple-50/70 border-purple-100"
+                      };
+                      updated = [...adminAvatars, newAv];
+                    }
+
+                    setAdminAvatars(updated);
+                    saveAvatars(updated);
+                    setIsAddingAvatar(false);
+                  }} className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">Nom de l&apos;Avatar</label>
+                      <input 
+                        type="text" 
+                        required 
+                        value={avatarName} 
+                        onChange={(e) => setAvatarName(e.target.value)} 
+                        placeholder="Ex: Lucario, Rondoudou..."
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">URL de l&apos;image (PNG / WEBP)</label>
+                      <input 
+                        type="url" 
+                        required 
+                        value={avatarUrl} 
+                        onChange={(e) => setAvatarUrl(e.target.value)} 
+                        placeholder="https://..."
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">Niveau requis pour débloquer</label>
+                      <input 
+                        type="number" 
+                        min={1} 
+                        max={50} 
+                        value={avatarReqLevel} 
+                        onChange={(e) => setAvatarReqLevel(parseInt(e.target.value) || 1)} 
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    {avatarUrl && (
+                      <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full overflow-hidden border bg-white p-1">
+                          <img src={avatarUrl} alt="Aperçu" className="w-full h-full object-contain" />
+                        </div>
+                        <span className="text-xs font-bold text-gray-600">Aperçu en direct</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingAvatar(false)}
+                        className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="submit"
+                        className="bg-primary hover:bg-primary-dark text-white font-extrabold px-5 py-2.5 rounded-xl text-xs shadow-md"
+                      >
+                        Enregistrer
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       <AuthModal 

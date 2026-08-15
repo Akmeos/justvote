@@ -9,6 +9,7 @@ import { Search, LogIn, User as UserIcon } from "lucide-react";
 import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { OnboardingCinematicModal } from "@/components/onboarding/OnboardingCinematicModal";
+import { InitialProfileSetupModal } from "@/components/auth/InitialProfileSetupModal";
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const [avatarUrl, setAvatarUrl] = useState("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png");
@@ -112,6 +113,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
       />
+
+      <InitialProfileSetupModal />
     </div>
   );
 }

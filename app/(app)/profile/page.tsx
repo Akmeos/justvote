@@ -33,25 +33,7 @@ const userStats = {
   currentStreak: 3
 };
 
-// Avatar options list with unlocking levels
-interface AvatarOption {
-  pokemonId: number;
-  name: string;
-  requiredLevel: number;
-  bgClass: string;
-}
-
-const avatarOptions: AvatarOption[] = [
-  { pokemonId: 25, name: "Pikachu", requiredLevel: 1, bgClass: "bg-yellow-50/70 border-yellow-100" },
-  { pokemonId: 133, name: "Évoli", requiredLevel: 1, bgClass: "bg-amber-50/70 border-amber-100" },
-  { pokemonId: 1, name: "Bulbizarre", requiredLevel: 1, bgClass: "bg-emerald-50/70 border-emerald-100" },
-  { pokemonId: 4, name: "Salamèche", requiredLevel: 1, bgClass: "bg-orange-50/70 border-orange-100" },
-  { pokemonId: 9, name: "Tortank", requiredLevel: 5, bgClass: "bg-blue-50/70 border-blue-100" },
-  { pokemonId: 94, name: "Ectoplasma", requiredLevel: 8, bgClass: "bg-purple-50/70 border-purple-100" },
-  { pokemonId: 6, name: "Dracaufeu", requiredLevel: 10, bgClass: "bg-red-50/70 border-red-100" },
-  { pokemonId: 143, name: "Ronflex", requiredLevel: 12, bgClass: "bg-cyan-50/70 border-cyan-100" },
-  { pokemonId: 150, name: "Mewtwo", requiredLevel: 15, bgClass: "bg-indigo-50/70 border-indigo-100" } // Locked (Titouan is 14)
-];
+import { getAvatars, AvatarItem } from "@/lib/avatars";
 
 // Badges list (matches mockData badges + additional)
 interface ProfileBadge {
@@ -613,16 +595,22 @@ export default function ProfilePage() {
             </div>
 
             {/* Avatars Bento Grid */}
-            <div className="grid grid-cols-3 gap-4">
-              {avatarOptions.map((option) => {
-                const isUnlocked = userStats.level >= option.requiredLevel;
-                const isSelected = currentAvatarUrl === getPokemonImageUrl(option.pokemonId);
+            <div className="grid grid-cols-3 gap-4 max-h-72 overflow-y-auto p-1 custom-scrollbar">
+              {getAvatars().map((option) => {
+                const isUnlocked = activeStats.level >= option.requiredLevel;
+                const isSelected = currentAvatarUrl === option.url;
 
                 return (
                   <button
-                    key={option.pokemonId}
+                    key={option.id}
                     disabled={!isUnlocked}
-                    onClick={() => selectAvatar(option)}
+                    onClick={() => {
+                      if (!isUnlocked) return;
+                      setCurrentAvatarUrl(option.url);
+                      localStorage.setItem("user-avatar-url", option.url);
+                      window.dispatchEvent(new CustomEvent("user-avatar-changed", { detail: option.url }));
+                      setAvatarModalOpen(false);
+                    }}
                     className={cn(
                       "flex flex-col items-center justify-center p-3 sm:p-4 rounded-[24px] border relative transition-all duration-300 group",
                       
@@ -636,11 +624,10 @@ export default function ProfilePage() {
                       !isUnlocked && "bg-gray-50 border-dashed border-gray-200 opacity-60 cursor-not-allowed"
                     )}
                   >
-                    {/* Pokémon avatar */}
-                    <div className="w-16 h-16 sm:w-24 sm:h-24 flex-shrink-0 flex items-center justify-center relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {/* Avatar Image */}
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 flex items-center justify-center relative">
                       <img 
-                        src={getPokemonImageUrl(option.pokemonId)} 
+                        src={option.url} 
                         alt={option.name} 
                         className={cn(
                           "w-full h-full object-contain transition-transform duration-300",
@@ -658,18 +645,16 @@ export default function ProfilePage() {
                       {option.name}
                     </span>
 
-                    {/* Lock indicator */}
+                    {/* Lock indicator & level requirement */}
                     {!isUnlocked && (
-                      <div className="absolute top-2 right-2 text-gray-400">
-                        <Lock size={10} />
-                      </div>
-                    )}
-
-                    {/* Level requirement badge (visible if locked) */}
-                    {!isUnlocked && (
-                      <div className="absolute bottom-1 bg-gray-200 text-gray-600 text-[8px] font-black px-1.5 py-0.5 rounded-full">
-                        Niv {option.requiredLevel}
-                      </div>
+                      <>
+                        <div className="absolute top-2 right-2 text-gray-400">
+                          <Lock size={12} />
+                        </div>
+                        <div className="absolute bottom-1 bg-gray-200 text-gray-600 text-[8px] font-black px-1.5 py-0.5 rounded-full">
+                          Niv {option.requiredLevel}
+                        </div>
+                      </>
                     )}
                   </button>
                 );
