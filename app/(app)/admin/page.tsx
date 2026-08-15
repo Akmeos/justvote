@@ -291,6 +291,19 @@ export default function AdminDashboardPage() {
   const [avatarReqLevel, setAvatarReqLevel] = useState(1);
   const [avatarSaveSuccess, setAvatarSaveSuccess] = useState(false);
   const [isAddingAvatar, setIsAddingAvatar] = useState(false);
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setAvatarUrl(event.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Category Admin State
   const [selectedCategoryToEdit, setSelectedCategoryToEdit] = useState<any>(null);
@@ -3280,6 +3293,16 @@ export default function AdminDashboardPage() {
                     saveAvatars(updated);
                     setIsAddingAvatar(false);
                   }} className="space-y-4">
+
+                    {/* Hidden file input */}
+                    <input 
+                      type="file" 
+                      ref={avatarFileInputRef} 
+                      onChange={handleAvatarFileChange} 
+                      accept="image/*" 
+                      className="hidden" 
+                    />
+
                     <div>
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">Nom de l&apos;Avatar</label>
                       <input 
@@ -3292,11 +3315,30 @@ export default function AdminDashboardPage() {
                       />
                     </div>
 
+                    {/* Image Upload from Device */}
                     <div>
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">URL de l&apos;image (PNG / WEBP)</label>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">Illustration de l&apos;Avatar</label>
+                      
+                      <button
+                        type="button"
+                        onClick={() => avatarFileInputRef.current?.click()}
+                        className="w-full border-2 border-dashed border-primary/30 hover:border-primary bg-primary/5 hover:bg-primary/10 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all group"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all">
+                          <Upload size={18} />
+                        </div>
+                        <div className="text-center">
+                          <span className="text-xs font-black text-primary block">Choisir un fichier depuis mon appareil 📱/💻</span>
+                          <span className="text-[10px] text-gray-400 font-semibold block mt-0.5">Glisser-déposer ou cliquer pour parcourir (PNG, WEBP, SVG)</span>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Optional URL Input */}
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">Ou coller une URL d&apos;image</label>
                       <input 
-                        type="url" 
-                        required 
+                        type="text" 
                         value={avatarUrl} 
                         onChange={(e) => setAvatarUrl(e.target.value)} 
                         placeholder="https://..."
@@ -3317,11 +3359,23 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {avatarUrl && (
-                      <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full overflow-hidden border bg-white p-1">
-                          <img src={avatarUrl} alt="Aperçu" className="w-full h-full object-contain" />
+                      <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-14 h-14 rounded-full overflow-hidden border bg-white p-1 shrink-0 flex items-center justify-center">
+                            <img src={avatarUrl} alt="Aperçu" className="w-full h-full object-contain" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-black text-gray-800 block">Aperçu de l&apos;image</span>
+                            <span className="text-[9px] text-emerald-600 font-bold block">✓ Image chargée avec succès</span>
+                          </div>
                         </div>
-                        <span className="text-xs font-bold text-gray-600">Aperçu en direct</span>
+                        <button
+                          type="button"
+                          onClick={() => setAvatarUrl("")}
+                          className="text-gray-400 hover:text-rose-500 text-xs font-bold p-1"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     )}
 
@@ -3335,7 +3389,8 @@ export default function AdminDashboardPage() {
                       </button>
                       <button
                         type="submit"
-                        className="bg-primary hover:bg-primary-dark text-white font-extrabold px-5 py-2.5 rounded-xl text-xs shadow-md"
+                        disabled={!avatarName.trim() || !avatarUrl.trim()}
+                        className="bg-primary hover:bg-primary-dark text-white font-extrabold px-5 py-2.5 rounded-xl text-xs shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Enregistrer
                       </button>
