@@ -22,15 +22,21 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [supabase] = useState(() => createClient());
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const supabase = createClient();
-
   const loadUserAndProfile = async () => {
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      let currentUser = session?.user || null;
+
+      if (!currentUser) {
+        const { data: { user: fetchedUser } } = await supabase.auth.getUser();
+        currentUser = fetchedUser;
+      }
+
       setUser(currentUser);
 
       if (currentUser) {
