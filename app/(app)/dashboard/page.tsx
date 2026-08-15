@@ -46,7 +46,7 @@ export default function Dashboard() {
     if (savedEmoji) setEquippedEmoji(savedEmoji);
   }, []);
 
-  const username = profile?.username || (user?.email ? user.email.split('@')[0] : "Joueur");
+  const username = profile?.username || user?.user_metadata?.full_name || user?.user_metadata?.name || (user?.email ? user.email.split('@')[0] : "Joueur");
 
 
   return (
