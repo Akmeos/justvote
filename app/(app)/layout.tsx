@@ -23,10 +23,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       setIsOnboardingOpen(true);
     }
 
-    // Sync initial avatar
-    const saved = localStorage.getItem("user-avatar-url");
-    if (saved) {
-      setAvatarUrl(saved);
+    // Sync avatar from profile, user metadata or local storage
+    if (profile?.avatar_url) {
+      setAvatarUrl(profile.avatar_url);
+    } else if (user?.user_metadata?.avatar_url || user?.user_metadata?.picture) {
+      setAvatarUrl(user.user_metadata.avatar_url || user.user_metadata.picture);
+    } else {
+      const saved = localStorage.getItem("user-avatar-url");
+      if (saved) setAvatarUrl(saved);
     }
 
     // Sync when avatar changes
@@ -41,7 +45,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     return () => {
       window.removeEventListener("user-avatar-changed", handleAvatarChange);
     };
-  }, []);
+  }, [profile, user]);
 
   return (
     <div className="flex min-h-screen bg-surface-muted">
@@ -75,10 +79,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                 className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm hover:border-indigo-300 transition-all"
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-indigo-200 shadow-soft bg-yellow-100 flex items-center justify-center p-0.5 shrink-0">
-                  <img src={avatarUrl} alt="Avatar Joueur" className="w-full h-full object-contain" />
+                  <img src={avatarUrl} alt="Avatar Joueur" className="w-full h-full object-cover rounded-full" />
                 </div>
                 <span className="text-xs font-black text-gray-800 max-w-[160px] truncate hidden sm:inline">
-                  {profile?.username || user.user_metadata?.username || user.email?.split('@')[0]}
+                  {profile?.username || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0]}
                 </span>
               </Link>
             ) : (

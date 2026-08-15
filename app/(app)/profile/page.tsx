@@ -170,9 +170,9 @@ export default function ProfilePage() {
   const [equippedTitle, setEquippedTitle] = useState("Oracle Légendaire");
   const [equippedEmoji, setEquippedEmoji] = useState("🔮");
 
-  // User stats derived from Supabase Profile or default
+  // User stats derived from Supabase Profile or OAuth metadata
   const activeStats = {
-    name: profile?.username || (user?.email ? user.email.split('@')[0] : userStats.name),
+    name: profile?.username || user?.user_metadata?.full_name || user?.user_metadata?.name || (user?.email ? user.email.split('@')[0] : userStats.name),
     title: profile?.equipped_title || equippedTitle,
     emoji: equippedEmoji,
     level: profile?.level || userStats.level,
@@ -185,17 +185,21 @@ export default function ProfilePage() {
     currentStreak: profile?.current_streak || userStats.currentStreak,
   };
 
-  // Sync avatar url, title, and emoji on mount
+  // Sync avatar url, title, and emoji on mount or profile change
   useEffect(() => {
-    const saved = localStorage.getItem("user-avatar-url");
-    if (saved) {
-      setCurrentAvatarUrl(saved);
+    if (profile?.avatar_url) {
+      setCurrentAvatarUrl(profile.avatar_url);
+    } else if (user?.user_metadata?.avatar_url || user?.user_metadata?.picture) {
+      setCurrentAvatarUrl(user.user_metadata.avatar_url || user.user_metadata.picture);
+    } else {
+      const saved = localStorage.getItem("user-avatar-url");
+      if (saved) setCurrentAvatarUrl(saved);
     }
     const savedTitle = localStorage.getItem("user-equipped-title");
     const savedEmoji = localStorage.getItem("user-equipped-emoji");
     if (savedTitle) setEquippedTitle(savedTitle);
     if (savedEmoji) setEquippedEmoji(savedEmoji);
-  }, []);
+  }, [profile, user]);
 
   const handleShareProfile = () => {
     const text = `Rejoins-moi sur Just Vote ! Je suis niveau ${userStats.level} avec le titre "${equippedTitle}" ${equippedEmoji}. Prêt à tester ton intuition ? ⚡️`;

@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentUser);
 
       if (currentUser) {
-        const userProf = await fetchUserProfile(currentUser.id);
+        const userProf = await ensureUserProfile(currentUser);
         setProfile(userProf);
       } else {
         setProfile(null);
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = session?.user || null;
       setUser(currentUser);
       if (currentUser) {
-        const userProf = await fetchUserProfile(currentUser.id);
+        const userProf = await ensureUserProfile(currentUser);
         setProfile(userProf);
       } else {
         setProfile(null);
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refetchProfile = async () => {
     if (user) {
-      const userProf = await fetchUserProfile(user.id);
+      const userProf = await ensureUserProfile(user);
       setProfile(userProf);
     }
   };

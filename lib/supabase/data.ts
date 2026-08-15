@@ -139,6 +139,8 @@ export async function submitVote(
   }
 }
 
+import { User } from '@supabase/supabase-js';
+
 // 5. Fetch User Profile
 export async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
   const supabase = createClient();
@@ -153,6 +155,68 @@ export async function fetchUserProfile(userId: string): Promise<UserProfile | nu
   }
 
   return data as UserProfile;
+}
+
+// 5b. Ensure & Sync User Profile with OAuth Metadata
+export async function ensureUserProfile(user: User): Promise<UserProfile> {
+  const supabase = createClient();
+
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const googleAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+  const googleName = user.user_metadata?.full_name || user.user_metadata?.name || user.user_metadata?.username;
+
+  if (existingProfile) {
+    if ((googleAvatar && (!existingProfile.avatar_url || existingProfile.avatar_url.includes('PokeAPI'))) || (googleName && existingProfile.username.startsWith('User_'))) {
+      const updates: Partial<UserProfile> = {};
+      if (googleAvatar) updates.avatar_url = googleAvatar;
+      if (googleName) updates.username = googleName;
+
+      const { data: updated } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (updated) return updated as UserProfile;
+    }
+    return existingProfile as UserProfile;
+  }
+
+  // Create new profile for OAuth user
+  const username = googleName || (user.email ? user.email.split('@')[0] : 'Akmeos');
+  const avatarUrl = googleAvatar || "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png";
+
+  const newProfile = {
+    id: user.id,
+    username: username,
+    avatar_url: avatarUrl,
+    equipped_title: 'Oracle Légendaire 🔮',
+    points: 100,
+    level: 1,
+    current_streak: 1,
+    max_streak: 1,
+    quizzes_completed: 0,
+    affinity_score: 78,
+  };
+
+  const { data: createdProfile, error: createErr } = await supabase
+    .from('profiles')
+    .insert(newProfile)
+    .select()
+    .single();
+
+  if (createErr || !createdProfile) {
+    console.error('Error auto-creating profile:', createErr);
+    return newProfile as UserProfile;
+  }
+
+  return createdProfile as UserProfile;
 }
 
 // 6. Update User Profile
