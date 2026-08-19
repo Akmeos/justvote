@@ -21,8 +21,10 @@ export function InitialProfileSetupModal() {
     if (user) {
       const hasCompletedSetup = localStorage.getItem(`setup-completed-${user.id}`);
       if (!hasCompletedSetup) {
-        // Pre-fill username from metadata or email
-        const initialName = profile?.username || user.user_metadata?.full_name || user.user_metadata?.name || (user.email ? user.email.split('@')[0] : "Joueur");
+        // Pre-fill username from local storage, profile, or email (avoiding Google full name)
+        const savedName = localStorage.getItem("user-username");
+        const googleFullName = user.user_metadata?.full_name || user.user_metadata?.name;
+        const initialName = savedName || (profile?.username && profile.username !== googleFullName ? profile.username : (user.email ? user.email.split('@')[0] : "Joueur"));
         setUsername(initialName);
 
         // Pre-select first avatar or matching avatar
@@ -43,10 +45,12 @@ export function InitialProfileSetupModal() {
     setLoading(true);
     try {
       // 1. Update Local Storage & close modal immediately for instant feedback
+      localStorage.setItem("user-username", username.trim());
       localStorage.setItem("user-avatar-url", selectedAvatar.url);
       localStorage.setItem(`setup-completed-${user.id}`, "true");
       setIsOpen(false);
       window.dispatchEvent(new CustomEvent("user-avatar-changed", { detail: selectedAvatar.url }));
+      window.dispatchEvent(new CustomEvent("user-username-changed", { detail: username.trim() }));
 
       // 2. Update Supabase Profile
       await updateUserProfile(user.id, {

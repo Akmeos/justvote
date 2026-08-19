@@ -152,9 +152,12 @@ export default function ProfilePage() {
   const [equippedTitle, setEquippedTitle] = useState("Oracle Légendaire");
   const [equippedEmoji, setEquippedEmoji] = useState("🔮");
 
-  // User stats derived from Supabase Profile or OAuth metadata
+  const savedUsername = typeof window !== "undefined" ? localStorage.getItem("user-username") : null;
+  const googleFullName = user?.user_metadata?.full_name || user?.user_metadata?.name;
+
+  // User stats derived from Supabase Profile or OAuth metadata (excluding Google full name)
   const activeStats = {
-    name: profile?.username || user?.user_metadata?.full_name || user?.user_metadata?.name || (user?.email ? user.email.split('@')[0] : userStats.name),
+    name: savedUsername || (profile?.username && profile.username !== googleFullName ? profile.username : (user?.email ? user.email.split('@')[0] : userStats.name)),
     title: profile?.equipped_title || equippedTitle,
     emoji: equippedEmoji,
     level: profile?.level || userStats.level,

@@ -13,6 +13,7 @@ import { InitialProfileSetupModal } from "@/components/auth/InitialProfileSetupM
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const [avatarUrl, setAvatarUrl] = useState("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png");
+  const [username, setUsername] = useState<string>("Joueur");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const { user, profile } = useAuth();
@@ -34,7 +35,23 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       if (saved) setAvatarUrl(saved);
     }
 
-    // Sync when avatar changes
+    // Sync in-game username (exclude Google OAuth full name)
+    const savedName = localStorage.getItem("user-username");
+    const googleFullName = user?.user_metadata?.full_name || user?.user_metadata?.name;
+
+    if (savedName) {
+      setUsername(savedName);
+    } else if (profile?.username && profile.username !== googleFullName) {
+      setUsername(profile.username);
+    } else if (user?.email) {
+      setUsername(user.email.split('@')[0]);
+    } else if (profile?.username) {
+      setUsername(profile.username);
+    } else {
+      setUsername("Joueur");
+    }
+
+    // Sync when avatar or username changes
     const handleAvatarChange = (e: Event) => {
       const customEvent = e as CustomEvent;
       if (customEvent.detail && typeof customEvent.detail === "string") {
@@ -42,9 +59,18 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       }
     };
 
+    const handleUsernameChange = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && typeof customEvent.detail === "string") {
+        setUsername(customEvent.detail);
+      }
+    };
+
     window.addEventListener("user-avatar-changed", handleAvatarChange);
+    window.addEventListener("user-username-changed", handleUsernameChange);
     return () => {
       window.removeEventListener("user-avatar-changed", handleAvatarChange);
+      window.removeEventListener("user-username-changed", handleUsernameChange);
     };
   }, [profile, user]);
 
@@ -83,7 +109,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                   <img src={avatarUrl} alt="Avatar Joueur" className="w-full h-full object-cover rounded-full" />
                 </div>
                 <span className="text-xs font-black text-gray-800 max-w-[160px] truncate hidden sm:inline">
-                  {profile?.username || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0]}
+                  {username}
                 </span>
               </Link>
             ) : (
